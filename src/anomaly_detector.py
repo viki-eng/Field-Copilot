@@ -33,13 +33,21 @@ def detect_anomalies(
     territory_id: str,
     as_of_date: str = None,
     priority_scores: pd.DataFrame = None,
+    tehsil_list: List[str] = None,
 ) -> List[Alert]:
     """Detect anomalies for a given territory. Returns list of Alert objects."""
     cutoff = pd.Timestamp(as_of_date) if as_of_date else ds.visit_log["visit_date"].max()
     alerts: List[Alert] = []
 
-    # Retailers in this territory
-    ter_retailers = ds.retailers[ds.retailers["territory_id"] == territory_id]["retailer_id"].tolist()
+    # Retailers scoped to rep's tehsils (or territory fallback)
+    if tehsil_list:
+        ter_retailers = ds.retailers[
+            ds.retailers["tehsil"].isin(tehsil_list)
+        ]["retailer_id"].tolist()
+    else:
+        ter_retailers = ds.retailers[
+            ds.retailers["territory_id"] == territory_id
+        ]["retailer_id"].tolist()
     if not ter_retailers:
         return alerts
 

@@ -234,6 +234,23 @@ def compute_scores(ds: DataStore, as_of_date: str = None) -> pd.DataFrame:
     rng = np.random.default_rng(42)
     table["raw_priority_score"] += rng.normal(0, 1.0, len(table))
 
+    # ── ML visit-outcome score (retailers only, LightGBM) ─────────────
+    try:
+        from src.ml_scorer import train_and_score
+        ml_scores = train_and_score(ds)
+        ml_df = ml_scores.reset_index()
+        ml_df.columns = ["id", "ml_visit_score"]
+        table = table.merge(ml_df, on="id", how="left")
+        table["ml_visit_score"] = table["ml_visit_score"].fillna(0)
+        retailers_mask = table["entity_type"] == "retailer"
+        table.loc[retailers_mask, "raw_priority_score"] += (
+            0.10 * table.loc[retailers_mask, "ml_visit_score"]
+        )
+    except Exception as _ml_exc:
+        import logging
+        logging.getLogger(__name__).warning("ML scoring skipped: %s", _ml_exc)
+        table["ml_visit_score"] = 0
+
     # ── Final normalization 0–100 ──────────────────────────────────────
     scaler = MinMaxScaler(feature_range=(0, 100))
     table["final_priority_score"] = scaler.fit_transform(

@@ -1,0 +1,100 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --background: #ffffff;
+  --foreground: #0f172a;
+
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+
+  --sidebar-bg: #ffffff;
+  --sidebar-border: #e2e8f0;
+  --sidebar-muted: #64748b;
+  --sidebar-active-bg: #f0fdf4;
+
+  --primary: #16a34a;
+  --primary-hover: #15803d;
+  --primary-foreground: #ffffff;
+
+  --secondary: #f1f5f9;
+  --secondary-hover: #e2e8f0;
+  --secondary-foreground: #0f172a;
+
+  --muted: #f8fafc;
+  --muted-foreground: #64748b;
+
+  --accent: #16a34a;
+  --accent-light: #f0fdf4;
+  --accent-border: #bbf7d0;
+
+  --destructive: #ef4444;
+  --destructive-light: #fef2f2;
+  --destructive-border: #fecaca;
+
+  --amber: #f59e0b;
+  --amber-light: #fffbeb;
+  --amber-border: #fde68a;
+
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #16a34a;
+
+  --radius: 8px;
+  --radius-sm: 6px;
+  --radius-lg: 12px;
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05);
+
+  --sidebar-width: 240px;
+  --topbar-height: 56px;
+  --sidebar-width-collapsed: 0px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--foreground);
+  background: #f8fafc;
+}
+
+button { cursor: pointer; font-family: inherit; font-size: 14px; }
+input, select, textarea { font-family: inherit; font-size: 14px; }
+a { text-decoration: none; color: inherit; }
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* Mapbox popup overrides */
+.mapboxgl-popup-content {
+  border-radius: var(--radius) !important;
+  box-shadow: var(--shadow-lg) !important;
+  padding: 12px 14px !important;
+  border: 1px solid var(--border) !important;
+}
+.mapboxgl-popup-close-button {
+  font-size: 16px !important;
+  color: var(--muted-foreground) !important;
+  padding: 4px 8px !important;
+}
+
+/* Responsive helpers */
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 240px;
+  }
+  .kpi-grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
+  .kpi-grid-2 { grid-template-columns: 1fr !important; }
+  .reps-grid { grid-template-columns: 1fr !important; }
+  .forecast-bottom { grid-template-columns: 1fr !important; }
+  .analytics-charts { grid-template-columns: 1fr !important; }
+}

@@ -40,13 +40,14 @@ def get_store() -> DataStore:
     return _store
 
 
-from api.routers import daily_plan, nba, alerts, outcomes, analytics
+from api.routers import daily_plan, nba, alerts, outcomes, analytics, rep_profile
 
-app.include_router(daily_plan.router, prefix="/api")
-app.include_router(nba.router,        prefix="/api")
-app.include_router(alerts.router,     prefix="/api")
-app.include_router(outcomes.router,   prefix="/api")
-app.include_router(analytics.router,  prefix="/api")
+app.include_router(rep_profile.router, prefix="/api")
+app.include_router(daily_plan.router,  prefix="/api")
+app.include_router(nba.router,         prefix="/api")
+app.include_router(alerts.router,      prefix="/api")
+app.include_router(outcomes.router,    prefix="/api")
+app.include_router(analytics.router,   prefix="/api")
 
 
 @app.get("/health")

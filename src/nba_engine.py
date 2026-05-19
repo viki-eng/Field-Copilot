@@ -121,7 +121,15 @@ def _build_context(
 _SYSTEM_PROMPT = """\
 You are an expert Syngenta agronomic field advisor helping a field sales representative.
 Respond ONLY with valid JSON — no explanation, no markdown, no extra text.
-Be specific and data-grounded. Use numbers from the context."""
+Be specific and data-grounded. Use numbers from the context.
+
+RULES:
+1. restock_sku: if any SKU in inventory has qty < 10, set this to that SKU name (lowest qty first). Otherwise null.
+2. restock_reason: 1 sentence explaining urgency of restocking (cite qty and pest/demand context). Only if restock_sku is set.
+3. upsell_product: a DIFFERENT Syngenta product the rep should cross-sell based on crop stage, pest pressure, or season.
+4. upsell_reason: 1 sentence why this upsell fits right now (cite pest pressure or crop stage data).
+5. talk_track: 2 sentences — open with restock urgency if applicable, then pitch the upsell.
+6. agronomic_advice: 1 actionable tip for the farmer/retailer's specific crop and stage."""
 
 _USER_TEMPLATE = """\
 Entity visit context:
@@ -129,11 +137,13 @@ Entity visit context:
 
 Return exactly this JSON structure:
 {{
-  "primary_product": "<Syngenta product name>",
-  "reason": "<1 sentence, cite specific data from context>",
-  "talk_track": "<2 sentences max — what the rep should say to open conversation>",
-  "agronomic_advice": "<1 sentence actionable agronomic tip relevant to crop/stage/pest>",
-  "promo_mechanic": "<promotional offer or null if none>",
+  "restock_sku": "<SKU name with qty < 10, or null>",
+  "restock_reason": "<why urgent to restock, or null>",
+  "upsell_product": "<cross-sell Syngenta product different from restock_sku>",
+  "upsell_reason": "<1 sentence why this upsell fits now>",
+  "talk_track": "<2 sentences — restock urgency first if applicable, then upsell pitch>",
+  "agronomic_advice": "<1 actionable agronomic tip>",
+  "promo_mechanic": "<promotional offer or null>",
   "whatsapp_followup": <true|false>
 }}"""
 
@@ -168,11 +178,22 @@ def get_nba(
         raw = response.choices[0].message.content.strip()
         return json.loads(raw)
     except Exception as exc:
-        # Rule-based fallback — always returns something useful
+        low_stock = next(
+            (i["sku_name"] for i in ctx.get("inventory", []) if i.get("sku_qty", 99) < 10),
+            None,
+        )
         return {
-            "primary_product": "Score 250 EC",
-            "reason": f"High pest pressure ({ctx.get('pest_pressure', 0):.0f}/100) in {ctx['district']} district.",
-            "talk_track": "Good morning! Given the current pest pressure in your area, we recommend ensuring stock of our fungicide range. Farmers are likely to need it in the next 7–10 days.",
+            "restock_sku": low_stock,
+            "restock_reason": (
+                f"{low_stock} has critically low stock; district pest pressure "
+                f"{ctx.get('pest_pressure', 0):.0f}/100 will drive demand." if low_stock else None
+            ),
+            "upsell_product": "Score 250 EC",
+            "upsell_reason": f"High pest pressure ({ctx.get('pest_pressure', 0):.0f}/100) in {ctx['district']} — fungicide demand likely.",
+            "talk_track": (
+                f"{'Urgent: ' + low_stock + ' is nearly out of stock. ' if low_stock else ''}"
+                "Given current pest pressure in your area, ensure your fungicide range is fully stocked — farmers will need it soon."
+            ),
             "agronomic_advice": "Apply fungicide at early disease onset for best efficacy.",
             "promo_mechanic": None,
             "whatsapp_followup": ctx.get("whatsapp_opened", False),

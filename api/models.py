@@ -13,6 +13,15 @@ class ItineraryItem(BaseModel):
     reason_codes: List[str]
     top_sku_to_discuss: Optional[str] = None
     visit_type_suggestion: str
+    # AI recommendation — always populated
+    ai_restock_sku: Optional[str] = None
+    ai_restock_reason: Optional[str] = None
+    ai_upsell_product: Optional[str] = None
+    ai_upsell_reason: Optional[str] = None
+    ai_talk_track: Optional[str] = None
+    ai_agronomic_advice: Optional[str] = None
+    ai_promo: Optional[str] = None
+    ai_whatsapp_followup: bool = False
 
 
 class AlertItem(BaseModel):
