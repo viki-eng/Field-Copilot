@@ -8,9 +8,12 @@ Modulated by rainfall from real weather data.
 3–5 stress events injected per season (simulate drought/disease).
 """
 
-import pandas as pd
+import logging
+
 import numpy as np
-from pathlib import Path
+import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 
 # Rabi 2025-26: 26 weekly snapshots, week ending each Sunday
@@ -102,13 +105,6 @@ NDVI_CURVES = {
     ],
 }
 
-# Default curve for any crop not listed
-_DEFAULT_CURVE = [
-    0.16, 0.20, 0.25, 0.31, 0.38, 0.46, 0.54, 0.61,
-    0.66, 0.70, 0.73, 0.75, 0.75, 0.74, 0.71, 0.67,
-    0.61, 0.54, 0.46, 0.38, 0.30, 0.24, 0.18, 0.14,
-    0.12, 0.10,
-]
 
 
 def generate_ndvi(weather_path: str, output_path: str, seed: int = 42) -> pd.DataFrame:
@@ -133,12 +129,12 @@ def generate_ndvi(weather_path: str, output_path: str, seed: int = 42) -> pd.Dat
     )
 
     rows = []
-    # Choose 4 districts for stress event injection
+    # Choose up to 5 districts for a 2-week NDVI stress event injection
     stress_districts = rng.choice(districts, size=min(5, len(districts)), replace=False)
 
     for district in districts:
         for crop in crops:
-            base_curve = np.array(NDVI_CURVES.get(crop, _DEFAULT_CURVE), dtype=float)
+            base_curve = np.array(NDVI_CURVES[crop], dtype=float)
 
             for i, week_end in enumerate(RABI_WEEKS):
                 ndvi = base_curve[i]
@@ -158,7 +154,7 @@ def generate_ndvi(weather_path: str, output_path: str, seed: int = 42) -> pd.Dat
                 # Gaussian noise
                 ndvi += rng.normal(0, 0.015)
 
-                # Stress event: one 2-week window per stressed district, crops 3-4
+                # Stress event: one 2-week NDVI drop window per stressed district
                 if district in stress_districts and 10 <= i <= 18:
                     stress_week = int(rng.integers(10, 16))
                     if i in (stress_week, stress_week + 1):
@@ -184,7 +180,7 @@ def generate_ndvi(weather_path: str, output_path: str, seed: int = 42) -> pd.Dat
     )
 
     df.to_csv(output_path, index=False)
-    print(f"[NDVI] Generated {len(df)} rows → {output_path}")
+    logger.info("[NDVI] Generated %d rows → %s", len(df), output_path)
     return df
 
 
