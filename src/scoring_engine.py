@@ -89,7 +89,6 @@ def compute_scores(ds: DataStore, as_of_date: str = None) -> pd.DataFrame:
     )
 
     # Merge pest for farmers (by district+crop)
-    farmers_mask = table["entity_type"] == "farmer"
     table = table.merge(
         pest_latest.rename(columns={"pest_score": "_pest_crop"}),
         on=["district", "crop"], how="left"
@@ -99,6 +98,7 @@ def compute_scores(ds: DataStore, as_of_date: str = None) -> pd.DataFrame:
         pest_district.rename(columns={"pest_score": "_pest_district"}),
         on="district", how="left"
     )
+    farmers_mask = table["entity_type"] == "farmer"
     table["pest_score"] = np.where(
         farmers_mask,
         table["_pest_crop"].fillna(table["_pest_district"]),
@@ -176,11 +176,13 @@ def compute_scores(ds: DataStore, as_of_date: str = None) -> pd.DataFrame:
     ndvi_latest = (
         ds.ndvi[ds.ndvi["week_end_date"] == latest_ndvi_week]
         [["district", "crop", "ndvi_value", "ndvi_delta"]]
+        .drop_duplicates(["district", "crop"])
     )
     table = table.merge(
         ndvi_latest.rename(columns={"ndvi_value": "_ndvi", "ndvi_delta": "_ndvi_delta"}),
         on=["district", "crop"], how="left"
     )
+    farmers_mask = table["entity_type"] == "farmer"
     # ndvi_score: low NDVI = stressed crop = higher urgency (invert)
     table["ndvi_score"] = np.where(
         farmers_mask,
