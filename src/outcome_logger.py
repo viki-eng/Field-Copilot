@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS visit_outcomes (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     rep_id      TEXT NOT NULL,
     entity_id   TEXT NOT NULL,
+    territory_id TEXT,
     visit_date  TEXT NOT NULL,
     outcome     TEXT NOT NULL CHECK(outcome IN ('sale','no_purchase','follow_up')),
     products_sold TEXT,
@@ -55,15 +56,16 @@ def log_outcome(
     products_sold: Optional[List[str]] = None,
     qty_sold: int = 0,
     notes: str = "",
+    territory_id: Optional[str] = None,
 ) -> int:
     """Insert a visit outcome. Returns new row id."""
     import json
     with _db() as conn:
         cur = conn.execute(
             """INSERT INTO visit_outcomes
-               (rep_id, entity_id, visit_date, outcome, products_sold, qty_sold, notes)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (rep_id, entity_id, visit_date, outcome,
+               (rep_id, entity_id, territory_id, visit_date, outcome, products_sold, qty_sold, notes)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (rep_id, entity_id, territory_id, visit_date, outcome,
              json.dumps(products_sold or []), qty_sold, notes),
         )
         return cur.lastrowid
@@ -74,11 +76,18 @@ def get_conversion_rate(territory_id: str = None, weeks: int = 4) -> dict:
     from datetime import timedelta
     cutoff = date.today() - timedelta(weeks=weeks)
     with _db() as conn:
-        rows = conn.execute(
-            "SELECT outcome, COUNT(*) as cnt FROM visit_outcomes "
-            "WHERE visit_date >= ? GROUP BY outcome",
-            (cutoff.isoformat(),),
-        ).fetchall()
+        if territory_id:
+            rows = conn.execute(
+                "SELECT outcome, COUNT(*) as cnt FROM visit_outcomes "
+                "WHERE visit_date >= ? AND territory_id = ? GROUP BY outcome",
+                (cutoff.isoformat(), territory_id),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT outcome, COUNT(*) as cnt FROM visit_outcomes "
+                "WHERE visit_date >= ? GROUP BY outcome",
+                (cutoff.isoformat(),),
+            ).fetchall()
     total = sum(r["cnt"] for r in rows)
     sales = sum(r["cnt"] for r in rows if r["outcome"] == "sale")
     return {

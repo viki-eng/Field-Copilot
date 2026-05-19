@@ -91,7 +91,7 @@ def detect_anomalies(
         (ds.pest["district"] == district) &
         (ds.pest["week_end_date"] == latest_pest_week)
     ]["pest_pressure"].max()
-    if pest_district > 60:
+    if pd.notna(pest_district) and pest_district > 60:
         for _, row in low_stock.iterrows():
             alerts.append(Alert(
                 alert_type="stockout_risk",
