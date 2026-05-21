@@ -176,6 +176,13 @@ def get_nba(
             max_tokens=400,
         )
         raw = response.choices[0].message.content.strip()
+        
+        # Handle markdown code blocks: ```json ... ``` or ``` ... ```
+        if raw.startswith('```'):
+            # Remove markdown code block wrapper
+            raw = raw.lstrip('`').lstrip('json').lstrip('`').strip()
+            raw = raw.rstrip('`').strip()
+        
         return json.loads(raw)
     except Exception as exc:
         low_stock = next(

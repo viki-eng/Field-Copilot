@@ -234,7 +234,7 @@ def compute_scores(ds: DataStore, as_of_date: str = None) -> pd.DataFrame:
     rng = np.random.default_rng(42)
     table["raw_priority_score"] += rng.normal(0, 1.0, len(table))
 
-    # ── ML visit-outcome score (retailers only, LightGBM) ─────────────
+    # ── ML visit-outcome score (retailers only, XGBoost) ─────────────
     try:
         from src.ml_scorer import train_and_score
         ml_scores = train_and_score(ds)
@@ -243,8 +243,10 @@ def compute_scores(ds: DataStore, as_of_date: str = None) -> pd.DataFrame:
         table = table.merge(ml_df, on="id", how="left")
         table["ml_visit_score"] = table["ml_visit_score"].fillna(0)
         retailers_mask = table["entity_type"] == "retailer"
-        table.loc[retailers_mask, "raw_priority_score"] += (
-            0.10 * table.loc[retailers_mask, "ml_visit_score"]
+        # ML score now accounts for 60% of final priority for retailers
+        table.loc[retailers_mask, "raw_priority_score"] = (
+            0.40 * table.loc[retailers_mask, "raw_priority_score"] +
+            0.60 * table.loc[retailers_mask, "ml_visit_score"]
         )
     except Exception as _ml_exc:
         import logging
